@@ -166,7 +166,7 @@ class Flipflopper(object):
 
     def _save_model(self):
         '''Save trained model to JSON file.'''
-        self.model.save(os.getcwd()+"/fixedpointfinder/saved/"+self.hps['rnn_type']+"model.h5")
+        self.model.save(os.getcwd()+"/saved/"+self.hps['rnn_type']+"model.h5")
         print("Saved "+self.hps['rnn_type']+" model.")
 
     def load_model(self):

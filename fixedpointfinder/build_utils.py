@@ -48,7 +48,7 @@ class RnnDsBuilder(DynamicalSystemsBuilder):
 
         return fun
 
-    def build_jacobian_fun(self):
+    def build_jacobian_fun(self, input):
         jac_fun = lambda x: - np.eye(self.n_hidden, self.n_hidden) + self.weights * (1 - np.tanh(x) ** 2)
 
         return jac_fun

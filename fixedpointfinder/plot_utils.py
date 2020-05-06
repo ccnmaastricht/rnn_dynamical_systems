@@ -31,6 +31,7 @@ def plot_velocities(activations, velocities, n_points: int = 5000):
     mlab.colorbar(orientation='vertical')
     mlab.show()
 
+
 def plot_fixed_points(activations, fps, n_points, scale):
     """Plot a set of fixedpoints together with activations of a recurrent layer.
 
@@ -73,14 +74,14 @@ def plot_fixed_points(activations, fps, n_points, scale):
             trace = np.matrix.trace(fp['jac'])
             det = np.linalg.det(fp['jac'])
             if det > 0 and trace == 0:
-                print('center has been found. Watch out for limit cycles')
+                print('center has been found.')
             elif trace**2 - 4 * det == 0:
                 print("star node has been found.")
             elif trace**2 - 4 * det < 0:
                 print("spiral has been found")
             e_val, e_vecs = np.linalg.eig(fp['jac'])
-            ids = np.argwhere(np.real(e_val) > 1)
-            countgreaterzero = np.sum(e_val > 1)
+            ids = np.argwhere(np.real(e_val) > 0)
+            countgreaterzero = np.sum(e_val > 0)
             if countgreaterzero == 0:
                 print('stable fixed point was found.')
                 fp['fp_stability'] = 'stable fixed point'
@@ -105,8 +106,6 @@ def plot_fixed_points(activations, fps, n_points, scale):
     pca.fit(activations)
     X_pca = pca.transform(activations)
     new_pca = pca.transform(fixedpoints)
-
-
 
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
@@ -136,6 +135,9 @@ def visualize_flipflop(prediction, stim):
     """Function to visualize the 3-Bit flip flop task."""
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharey=True)
     # plt.title('3-Bit Flip-Flop')
+    ax1.xaxis.set_visible(False)
+    ax2.xaxis.set_visible(False)
+
     ax1.plot(prediction[0, :, 0], c='r')
     ax1.plot(stim['inputs'][0, :, 0], c='k')
     ax2.plot(stim['inputs'][0, :, 1], c='k')
@@ -144,6 +146,5 @@ def visualize_flipflop(prediction, stim):
     ax3.plot(prediction[0, :, 2], c='b')
     plt.yticks([-1, +1])
     plt.xlabel('Time')
-    ax1.xaxis.set_visible(False)
-    ax2.xaxis.set_visible(False)
+
     plt.show()
