@@ -40,7 +40,7 @@ if __name__ == "__main__":
                                q_threshold=1e-12,
                                epsilon=0.01,
                                alr_decayr=0.0001,
-                               max_iters=7000)
+                               max_iters=5000)
     # sample states, i.e. a number of ICs
     states = fpf.sample_states(activations, 1000, 0.5)
     # vel = fpf.compute_velocities(np.hstack(activations[1:]), np.zeros((32768, 3)))

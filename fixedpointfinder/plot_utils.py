@@ -53,7 +53,6 @@ def plot_fixed_points(activations, fps, n_points, scale):
 
         return fixed_point_locations
 
-
     def classify_fixedpoints(fps, scale):
         """Function to classify fixed points. Methodology is based on
         'Nonlinear Dynamics and Chaos, Strogatz 2015'.
@@ -136,7 +135,7 @@ def plot_fixed_points(activations, fps, n_points, scale):
 def visualize_flipflop(prediction, stim):
     """Function to visualize the 3-Bit flip flop task."""
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharey=True)
-    fig.title('3-Bit Flip-Flop')
+    # plt.title('3-Bit Flip-Flop')
     ax1.plot(prediction[0, :, 0], c='r')
     ax1.plot(stim['inputs'][0, :, 0], c='k')
     ax2.plot(stim['inputs'][0, :, 1], c='k')
