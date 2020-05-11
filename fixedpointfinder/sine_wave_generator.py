@@ -115,8 +115,9 @@ if __name__ == "__main__":
 
     prediction = sinwaver.model.predict(tf.convert_to_tensor(stimulus['input'], dtype=tf.float32))
 
-    plt.plot(prediction[0, :, :])
-    plt.plot(stimulus['output'][0, :, :])
+    plt.plot(prediction[0, :, :], label='prediction')
+    plt.plot(stimulus['output'][0, :, :], label='data')
+    plt.legend(loc='upper right')
     plt.show()
 
     #plt.plot(stimulus['input'][0, :, :])
