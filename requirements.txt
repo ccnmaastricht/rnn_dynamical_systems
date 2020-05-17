@@ -3,3 +3,5 @@ autograd
 scipy
 sklearn
 matplotlib
+numdifftools
+pathos

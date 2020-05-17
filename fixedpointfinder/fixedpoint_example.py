@@ -1,8 +1,8 @@
 import sys
 sys.path.append("/Users/Raphael/dexterous-robot-hand/rnn_dynamical_systems")
-from analysis.rnn_dynamical_systems.fixedpointfinder.FixedPointFinder import Adamfixedpointfinder
-from analysis.rnn_dynamical_systems.fixedpointfinder.three_bit_flip_flop import Flipflopper
-from analysis.rnn_dynamical_systems.fixedpointfinder.plot_utils import plot_fixed_points, visualize_flipflop
+from fixedpointfinder.FixedPointFinder import Adamfixedpointfinder, Tffixedpointfinder
+from fixedpointfinder.three_bit_flip_flop import Flipflopper
+from fixedpointfinder.plot_utils import plot_fixed_points, visualize_flipflop
 import autograd.numpy as np
 import os
 import tensorflow as tf
@@ -37,16 +37,17 @@ if __name__ == "__main__":
     weights = flopper.model.get_layer(flopper.hps['rnn_type']).get_weights()
     activations = flopper.get_activations(stim)
     # initialize adam fpf
-    fpf = Adamfixedpointfinder(weights, rnn_type,
-                               q_threshold=1e-10,
-                               epsilon=0.01,
-                               alr_decayr=0.0001,
+    fpf = Tffixedpointfinder(weights, rnn_type,
+                               q_threshold=1e-12,
+                               epsilon=0.001,
                                max_iters=7000)
     # sample states, i.e. a number of ICs
-    states = fpf.sample_states(activations, 1000, 0.2)
+    states = fpf.sample_states(activations, 1000, 0)
+
+    #states = states.reshape(20, 500, 24)
     inputs = np.zeros((states.shape[0], 3))
     # find fixed points
-    fps = fpf.find_fixed_points(states, inputs)
+    fps = fpf.find_fixed_points(states, inputs, flopper.model)
     # plot fixed points and state trajectories in 3D
     plot_fixed_points(activations, fps, 2000, 2.5)
     plt.show()

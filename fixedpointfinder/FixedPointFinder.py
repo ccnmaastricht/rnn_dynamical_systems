@@ -2,11 +2,11 @@ import numpy as np
 import pathos.multiprocessing as mp
 import numdifftools as nd
 from scipy.optimize import minimize
-from analysis.rnn_dynamical_systems.fixedpointfinder.build_utils import RnnDsBuilder, GruDsBuilder, CircularGruBuilder, \
+from fixedpointfinder.build_utils import RnnDsBuilder, GruDsBuilder, CircularGruBuilder, \
     LstmDsBuilder, HopfDsBuilder
-from analysis.rnn_dynamical_systems.fixedpointfinder.minimization import Minimizer, RecordableMinimizer, \
+from fixedpointfinder.minimization import Minimizer, RecordableMinimizer, \
     CircularMinimizer
-from utilities.util import parse_state, add_state_dims, flatten, insert_unknown_shape_dimensions
+from utilities.util import flatten
 from utilities.model_utils import build_sub_model_to
 import tensorflow as tf
 
@@ -281,7 +281,6 @@ class FixedPointFinder(object):
             k += 1
 
         return fixedpoints
-
 
     def _print_hps(self):
         COLORS = dict(
@@ -561,22 +560,16 @@ class Scipyfixedpointfinder(FixedPointFinder):
 
 
 class Tffixedpointfinder(FixedPointFinder):
-    tf_default_hps = {'alr_hps': {'decay_rate': 0.0005},
-                        'agnc_hps': {'norm_clip': 1.0,
-                                     'decay_rate': 1e-03},
-                        'adam_hps': {'epsilon': 1e-03,
-                                     'max_iters': 5000,
-                                     'method': 'joint',
-                                     'print_every': 200}}
+    tf_default_hps = {'adam_hps': {'epsilon': 1e-03,
+                                   'max_iters': 5000,
+                                   'method': 'joint',
+                                   'print_every': 200}}
 
     def __init__(self, weights, rnn_type,
                  q_threshold=FixedPointFinder._default_hps['q_threshold'],
                  tol_unique=FixedPointFinder._default_hps['tol_unique'],
                  verbose=FixedPointFinder._default_hps['verbose'],
                  random_seed=FixedPointFinder._default_hps['random_seed'],
-                 alr_decayr=tf_default_hps['alr_hps']['decay_rate'],
-                 agnc_normclip=tf_default_hps['agnc_hps']['norm_clip'],
-                 agnc_decayr=tf_default_hps['agnc_hps']['decay_rate'],
                  epsilon=tf_default_hps['adam_hps']['epsilon'],
                  max_iters=tf_default_hps['adam_hps']['max_iters'],
                  method=tf_default_hps['adam_hps']['method'],
@@ -585,9 +578,6 @@ class Tffixedpointfinder(FixedPointFinder):
                                   tol_unique=tol_unique,
                                   verbose=verbose,
                                   random_seed=random_seed)
-        self.alr_decayr = alr_decayr
-        self.agnc_normclip = agnc_normclip
-        self.agnc_decayr = agnc_decayr
         self.epsilon = epsilon
         self.max_iters = max_iters
         self.method = method
@@ -615,37 +605,72 @@ class Tffixedpointfinder(FixedPointFinder):
               f"performing {self.method} optimization\n"
               f"-----------------------------------------\n")
 
+    @staticmethod
+    def _create_fixedpoint_object(fun, fps, x0, inputs):
+        """Initial creation of a fixedpoint object. A fixedpoint object is a dictionary
+        providing information about a fixedpoint. Initial information is specified in
+        parameters of this function. Please note that e.g. jacobian matrices will be added
+        at a later stage to the fixedpoint object.
+
+        Args:
+            fun: function of dynamical system in which the fixedpoint has been optimized.
+
+            fps: numpy array containing all optimized fixedpoints. It has the size
+            [n_init x n_units]. No default.
+
+            x0: numpy array containing all initial conditions. It has the size
+            [n_init x n_units]. No default.
+
+            inputs: numpy array containing all inputs corresponding to initial conditions.
+            It has the size [n_init x n_units]. No default.
+
+        Returns:
+            List of initialized fixedpointobjects."""
+
+        fixedpoints = []
+        k = 0
+        # TODO: make sequential function for each input
+        for fp in fps:
+
+            fixedpointobject = {'fun': fun[0, k],
+                                'x': fp,
+                                'x_init': x0[k, :],
+                                'input_init': inputs[0, k, :]}
+            fixedpoints.append(fixedpointobject)
+            k += 1
+
+        return fixedpoints
+
     def find_fixed_points(self, states, inputs, model):
 
-        lstmcell = build_sub_model_to(model, [self.rnn_type])
-        # init_c_h = states
-        # input = np.vstack(stim['inputs'][:20, :, :])
-        # input = np.zeros((n, 3))
-        # c = init_c_h[0:n, n_hidden:]  # [n_batch x n_dims]
-        # h = init_c_h[0:n, :n_hidden]  # [n_batch x n_dims]
-
+        rnn_layer = model.get_layer(self.rnn_type).cell
         inputs = tf.constant(inputs, dtype='float32')
+        initial_states = states
+        #states = tf.Variable(states, dtype='float32')
+        states = tf.convert_to_tensor(states, dtype='float32')
 
-        # tuple = tf.Variable([tf.convert_to_tensor(h), tf.convert_to_tensor(c)],
-        #   dtype='float32')
+        next_state = rnn_layer(inputs, [states])
 
-        # output, next_state = lstmcell(inputs, tuple)
-        # lstmcell.set_weights(weights)
-        # lstmcell.trainable = False
-        # tuple = tf.reshape(tuple, [2, 2*n_hidden])
-        # F = tf.concat((next_state[0], next_state[1]), axis=1)
+        optimizer = tf.keras.optimizers.Adam(self.epsilon)
+        for i in range(self.max_iters):
 
-        # optimizer = tf.keras.optimizers.Adam(0.001)
-        # for i in range(5000):
-        #    with tf.GradientTape() as tape:
-        #       q = 0.5 * tf.reduce_sum(tf.square(next_state - tuple), axis=1)
-        #       q_scalar = tf.reduce_mean(q)
-        #       gradients = tape.gradient(q_scalar, [tuple])
-        #   optimizer.apply_gradients(zip(gradients, [tuple]))
+            with tf.GradientTape() as tape:
+                q = 1/self.n_hidden * tf.reduce_sum(tf.square(next_state - states), axis=1)
+                q_scalar = tf.reduce_mean(q)
+                gradients = tape.gradient(q_scalar, states)
 
-        #  print(q_scalar.numpy())
-        #  print(tf.reduce_mean(tuple))
-        # jac = tape.jacobian(q, [tuple])
+            optimizer.apply_gradients(zip(gradients, states))
+
+            if i % self.print_every == 0 and self.verbose:
+                print(q_scalar.numpy())
+
+        fixedpointobjects = self._create_fixedpoint_object(q.numpy(), states.numpy(), initial_states, inputs.numpy())
+        good_fps, bad_fps = self._handle_bad_approximations(fixedpointobjects)
+        unique_fps = self._find_unique_fixed_points(good_fps)
+
+        unique_fps = self._compute_jacobian(unique_fps)
+
+        return unique_fps
 
 
 class RecordingFixedpointfinder(Adamfixedpointfinder):
