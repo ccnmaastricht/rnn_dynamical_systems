@@ -632,10 +632,10 @@ class Tffixedpointfinder(FixedPointFinder):
         # TODO: make sequential function for each input
         for fp in fps:
 
-            fixedpointobject = {'fun': fun[0, k],
+            fixedpointobject = {'fun': fun[k],
                                 'x': fp,
                                 'x_init': x0[k, :],
-                                'input_init': inputs[0, k, :]}
+                                'input_init': inputs[k, :]}
             fixedpoints.append(fixedpointobject)
             k += 1
 
@@ -646,10 +646,9 @@ class Tffixedpointfinder(FixedPointFinder):
         rnn_layer = model.get_layer(self.rnn_type).cell
         inputs = tf.constant(inputs, dtype='float32')
         initial_states = states
-        #states = tf.Variable(states, dtype='float32')
-        states = tf.convert_to_tensor(states, dtype='float32')
+        states = tf.Variable(states, dtype='float32')
 
-        next_state = rnn_layer(inputs, [states])
+        next_state, _ = rnn_layer(inputs, [states])
 
         optimizer = tf.keras.optimizers.Adam(self.epsilon)
         for i in range(self.max_iters):
@@ -657,9 +656,9 @@ class Tffixedpointfinder(FixedPointFinder):
             with tf.GradientTape() as tape:
                 q = 1/self.n_hidden * tf.reduce_sum(tf.square(next_state - states), axis=1)
                 q_scalar = tf.reduce_mean(q)
-                gradients = tape.gradient(q_scalar, states)
+                gradients = tape.gradient(q_scalar, [states])
 
-            optimizer.apply_gradients(zip(gradients, states))
+            optimizer.apply_gradients(zip(gradients, [states]))
 
             if i % self.print_every == 0 and self.verbose:
                 print(q_scalar.numpy())

@@ -5,8 +5,6 @@
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/fixedpointfinder/FixedPointFinder.py" beforeDir="false" afterPath="$PROJECT_DIR$/fixedpointfinder/FixedPointFinder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fixedpointfinder/fixedpoint_example.py" beforeDir="false" afterPath="$PROJECT_DIR$/fixedpointfinder/fixedpoint_example.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,7 +34,29 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.fixedpoint_example">
+    <configuration name="FixedPointFinder" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="rnn_dynamical_systems" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/fixedpointfinder" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/fixedpointfinder/FixedPointFinder.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="fixedpoint_example" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="rnn_dynamical_systems" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -59,6 +79,7 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.fixedpoint_example" />
+        <item itemvalue="Python.FixedPointFinder" />
       </list>
     </recent_temporary>
   </component>
@@ -77,6 +98,7 @@
       <workItem from="1584701684124" duration="33391000" />
       <workItem from="1584965619419" duration="22870000" />
       <workItem from="1589704811069" duration="318000" />
+      <workItem from="1589715129958" duration="499000" />
     </task>
     <servers />
   </component>
@@ -88,22 +110,22 @@
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
     <state x="451" y="210" key="#com.intellij.execution.impl.EditConfigurationsDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1589706926218" />
-    <state width="1807" height="278" key="GridCell.Tab.0.bottom" timestamp="1589706897525">
+    <state width="1807" height="278" key="GridCell.Tab.0.bottom" timestamp="1589715544285">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="278" key="GridCell.Tab.0.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1589706897525" />
-    <state width="1807" height="278" key="GridCell.Tab.0.center" timestamp="1589706897525">
+    <state width="1807" height="278" key="GridCell.Tab.0.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1589715544285" />
+    <state width="1807" height="278" key="GridCell.Tab.0.center" timestamp="1589715544285">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="278" key="GridCell.Tab.0.center/67.27.1853.1053@67.27.1853.1053" timestamp="1589706897525" />
-    <state width="1807" height="278" key="GridCell.Tab.0.left" timestamp="1589706897524">
+    <state width="1807" height="278" key="GridCell.Tab.0.center/67.27.1853.1053@67.27.1853.1053" timestamp="1589715544285" />
+    <state width="1807" height="278" key="GridCell.Tab.0.left" timestamp="1589715544285">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="278" key="GridCell.Tab.0.left/67.27.1853.1053@67.27.1853.1053" timestamp="1589706897524" />
-    <state width="1807" height="278" key="GridCell.Tab.0.right" timestamp="1589706897525">
+    <state width="1807" height="278" key="GridCell.Tab.0.left/67.27.1853.1053@67.27.1853.1053" timestamp="1589715544285" />
+    <state width="1807" height="278" key="GridCell.Tab.0.right" timestamp="1589715544285">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1807" height="278" key="GridCell.Tab.0.right/67.27.1853.1053@67.27.1853.1053" timestamp="1589706897525" />
+    <state width="1807" height="278" key="GridCell.Tab.0.right/67.27.1853.1053@67.27.1853.1053" timestamp="1589715544285" />
     <state x="520" y="202" key="SettingsEditor" timestamp="1589713022178">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
@@ -111,6 +133,7 @@
     <state x="520" y="202" key="SettingsEditor/67.27.1853.1053@67.27.1853.1053" timestamp="1589713022178" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/rnn_dynamical_systems$FixedPointFinder.coverage" NAME="FixedPointFinder Coverage Results" MODIFIED="1589715535821" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/fixedpointfinder" />
     <SUITE FILE_PATH="coverage/rnn_dynamical_systems$fixedpoint_example.coverage" NAME="fixedpoint_example Coverage Results" MODIFIED="1589706880242" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/fixedpointfinder" />
   </component>
 </project>
