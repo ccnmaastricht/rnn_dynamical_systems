@@ -38,12 +38,12 @@ if __name__ == "__main__":
     activations = flopper.get_activations(stim)
     # initialize adam fpf
     fpf = Tffixedpointfinder(weights, rnn_type,
-                               q_threshold=1e-14,
+                             q_threshold=1e-14,
                              tol_unique=1e-02,
-                               epsilon=0.01,
-                               max_iters=5000)
+                             epsilon=0.01,
+                             max_iters=10000)
     # sample states, i.e. a number of ICs
-    states = fpf.sample_states(activations, 200, 0.2)
+    states = fpf.sample_states(activations, 200, 0.5)
     inputs = np.zeros((states.shape[0], 3))
     # find fixed points
     fps = fpf.find_fixed_points(states, inputs, flopper.model)
