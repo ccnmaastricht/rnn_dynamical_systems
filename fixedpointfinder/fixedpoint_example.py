@@ -1,12 +1,13 @@
 import sys
-sys.path.append("/Users/Raphael/dexterous-robot-hand/rnn_dynamical_systems")
-from fixedpointfinder.FixedPointFinder import Adamfixedpointfinder, Tffixedpointfinder
-from fixedpointfinder.three_bit_flip_flop import Flipflopper
-from fixedpointfinder.plot_utils import plot_fixed_points, visualize_flipflop
 import autograd.numpy as np
 import os
 import tensorflow as tf
 import matplotlib.pyplot as plt
+sys.path.append("~/dexterous-robot-hand/rnn_dynamical_systems")
+from analysis.rnn_dynamical_systems.fixedpointfinder.FixedPointFinder import Adamfixedpointfinder
+from analysis.rnn_dynamical_systems.fixedpointfinder.three_bit_flip_flop import Flipflopper
+from analysis.rnn_dynamical_systems.fixedpointfinder.plot_utils import plot_fixed_points, visualize_flipflop
+
 if __name__ == "__main__":
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -37,16 +38,17 @@ if __name__ == "__main__":
     weights = flopper.model.get_layer(flopper.hps['rnn_type']).get_weights()
     activations = flopper.get_activations(stim)
     # initialize adam fpf
-    fpf = Tffixedpointfinder(weights, rnn_type,
-                             q_threshold=1e-14,
-                             tol_unique=1e-02,
-                             epsilon=0.01,
-                             max_iters=10000)
+    fpf = Adamfixedpointfinder(weights, rnn_type,
+                               q_threshold=1e-12,
+                               tol_unique=1e-03,
+                               epsilon=0.01,
+                               alr_decayr=5e-02,
+                               max_iters=5000)
     # sample states, i.e. a number of ICs
-    states = fpf.sample_states(activations, 200, 0.5)
+    states = fpf.sample_states(activations, 200, 0.1)
     inputs = np.zeros((states.shape[0], 3))
     # find fixed points
-    fps = fpf.find_fixed_points(states, inputs, flopper.model)
+    fps = fpf.find_fixed_points(states, inputs)
     # plot fixed points and state trajectories in 3D
     plot_fixed_points(activations, fps, 2000, 2.5)
     plt.show()

@@ -303,8 +303,6 @@ class FixedPointFinder(object):
               f"unique_tolerance - {self.unique_tol}\n"
               f"-----------------------------------------\n")
 
-# TODO: make function to classify fixedpoints apart from the one inside the plotting
-
 
 class Adamfixedpointfinder(FixedPointFinder):
     adam_default_hps = {'alr_hps': {'decay_rate': 0.0005},
@@ -561,6 +559,7 @@ class Scipyfixedpointfinder(FixedPointFinder):
 
 class Tffixedpointfinder(FixedPointFinder):
     tf_default_hps = {'adam_hps': {'epsilon': 1e-03,
+                                   'alr_decayr': 5e-03,
                                    'max_iters': 5000,
                                    'method': 'joint',
                                    'print_every': 200}}
@@ -571,6 +570,7 @@ class Tffixedpointfinder(FixedPointFinder):
                  verbose=FixedPointFinder._default_hps['verbose'],
                  random_seed=FixedPointFinder._default_hps['random_seed'],
                  epsilon=tf_default_hps['adam_hps']['epsilon'],
+                 alr_decayr=tf_default_hps['adam_hps']['alr_decayr'],
                  max_iters=tf_default_hps['adam_hps']['max_iters'],
                  method=tf_default_hps['adam_hps']['method'],
                  print_every=tf_default_hps['adam_hps']['print_every']):
@@ -579,6 +579,7 @@ class Tffixedpointfinder(FixedPointFinder):
                                   verbose=verbose,
                                   random_seed=random_seed)
         self.epsilon = epsilon
+        self.alr_decayr = alr_decayr
         self.max_iters = max_iters
         self.method = method
         self.print_every = print_every
@@ -604,6 +605,10 @@ class Tffixedpointfinder(FixedPointFinder):
               f"print every {self.print_every} iterations\n"
               f"performing {self.method} optimization\n"
               f"-----------------------------------------\n")
+
+    @staticmethod
+    def _decay_lr(initial_lr, decay, iteration):
+        return initial_lr * (1.0 / (1.0 + decay * iteration))
 
     @staticmethod
     def _create_fixedpoint_object(fun, fps, x0, inputs):
@@ -662,6 +667,7 @@ class Tffixedpointfinder(FixedPointFinder):
 
             if i % self.print_every == 0 and self.verbose:
                 print(q_scalar.numpy())
+            optimizer.epsilon = self._decay_lr(self.epsilon, self.alr_decayr, i)
 
         fixedpointobjects = self._create_fixedpoint_object(q.numpy(), states.numpy(), initial_states, inputs.numpy())
         good_fps, bad_fps = self._handle_bad_approximations(fixedpointobjects)

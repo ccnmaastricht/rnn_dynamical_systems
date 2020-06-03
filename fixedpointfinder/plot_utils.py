@@ -346,3 +346,70 @@ class LanderFixedPointPlotter(FixedPointPlotter):
         for i, color in enumerate(self.color_code.items()):
             leg.legendHandles[i].set_color(color[1])
         return fig, ax
+
+
+class MountainCarFixedPointPlotter(FixedPointPlotter):
+
+    def __init__(self, activations, fps, actions):
+
+        FixedPointPlotter.__init__(self, activations, fps)
+
+        self.actions = actions
+        self.color_code = {'left push': 'r',
+                           'no push': 'k',
+                           'right push': 'g'}
+        self.definitive_actions = self._process_actions()
+
+    def _process_actions(self):
+        definitive_action = []
+
+        for action in self.actions:
+            if action == 0:
+                definitive_action.append('left push')
+            elif action == 1:
+                definitive_action.append('no push')
+            elif action == 2:
+                definitive_action.append('right push')
+
+        return definitive_action
+
+    def plot_fixed_points(self, n_points, scale=1):
+
+        fps, x_directions = self._classify_fixedpoints(scale)
+
+        fixedpoints = self._extract_fixed_point_locations()
+        if len(self.activations.shape) == 3:
+            self.activations = np.vstack(self.activations)
+
+        pca = skld.PCA(3)
+        pca.fit(self.activations)
+        X_pca = pca.transform(self.activations)
+        new_pca = pca.transform(fixedpoints)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        for k in range(n_points-3):
+            ax.plot(X_pca[k:k+3, 0], X_pca[k:k+3, 1], X_pca[k:k+3, 2],
+                    linewidth=0.7, c=self.color_code[self.definitive_actions[k]])
+
+        for i in range(len(new_pca)):
+            if fps[i]['fp_stability'] == 'stable fixed point':
+                ax.scatter(new_pca[i, 0], new_pca[i, 1], new_pca[i, 2],
+                           marker='.', s=30, c='k')
+            elif fps[i]['fp_stability'] == 'saddle point':
+                ax.scatter(new_pca[i, 0], new_pca[i, 1], new_pca[i, 2],
+                           marker='.', s=30, c='r')
+                for p in range(len(x_directions)):
+                    direction_matrix = pca.transform(x_directions[p])
+                    ax.plot(direction_matrix[:, 0], direction_matrix[:, 1], direction_matrix[:, 2],
+                            c='r', linewidth=0.8)
+
+        # plt.title('PCA using modeltype: ' + self.hps['rnn_type'])
+        ax.set_xlabel('PC1')
+        ax.set_ylabel('PC2')
+        ax.set_zlabel('PC3')
+        plt.legend(self.color_code.keys(), loc='upper left')
+        leg = ax.get_legend()
+        for i, color in enumerate(self.color_code.items()):
+            leg.legendHandles[i].set_color(color[1])
+        return fig, ax

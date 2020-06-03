@@ -12,7 +12,7 @@ Concepts were derived from:
 Fixedpointfinder comes in mutliple child classes. Those include:
   * `Adamfixedpointfinder`, a version employing Adam for minimization
   * `Scipyfixedpointfinder`, a version employing minimize from scipy's optimization package
-  * `Tffixedpointfinder`, a `tensorflow` version currently under construction. (Will also use adam)
+  * `Tffixedpointfinder`, a `tensorflow` version
   * `RecordingFixedpointfinder`, a version employing Adam with functionality to record the optimization process
   
 `Joint` optimization from `Adamfixedpointfinder` converges fastest empirically.

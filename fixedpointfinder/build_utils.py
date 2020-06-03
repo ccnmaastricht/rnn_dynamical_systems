@@ -334,6 +334,7 @@ class CircularGruBuilder(GruDsBuilder):
 
         return jac_fun
 
+
 class HopfDsBuilder:
 
     def __init__(self, weights, n_hidden):
@@ -403,35 +404,5 @@ class HopfDsBuilder:
         return jac_fun
 
 
-def unwrapper(means, variances, states):
-    unwrapped_states = []
-    for state in states:
-        unwrapped_states.append((state * np.sqrt(variances)) + means)
-
-    return np.vstack(unwrapped_states)
-
-    means = chiefinvesti.preprocessor.wrappers[0].mean[0]
-    variances = chiefinvesti.preprocessor.wrappers[0].variance[0]
-    states_all_episodes = np.vstack(states_all_episodes)
-    unwrapped_states = unwrapper(means, variances, states_all_episodes)
-
-    pca = skld.PCA(3)
-
-    transformed_states = pca.fit_transform(unwrapped_states[:100, :])
-    transformed_states_wrapped = pca.transform(states_all_episodes[:100, :])
-
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-
-    ax.plot(transformed_states[:, 0], transformed_states[:, 1], transformed_states[:, 2])
-    plt.title('unwrapped states')
-    plt.show()
-
-    fig = plt.figure()
-    ax = fig.add_subplot(projection='3d')
-
-    ax.plot(transformed_states_wrapped[:, 0], transformed_states_wrapped[:, 1], transformed_states_wrapped[:, 2])
-    plt.title('wrapped states')
-    plt.show()
 
 
