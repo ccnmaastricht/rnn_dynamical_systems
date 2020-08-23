@@ -32,7 +32,8 @@ class Minimizer(object):
 
     @staticmethod
     def _print_update(q, lr, agnc, norm):
-        print("Function value:", q, "; lr:", np.round(lr, 4), "; agnc", agnc, "; norm", norm)
+        print(f"Function value: {np.round(q, 14)}| lr: {np.round(lr, 4)}| "
+              f"agnc: {np.round(agnc,4)}| norm: {np.round(norm, 6)}")
 
     @staticmethod
     def _decay_lr(initial_lr, decay, iteration):

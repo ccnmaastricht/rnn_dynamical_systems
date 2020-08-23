@@ -2,9 +2,9 @@ import numpy as np
 import pathos.multiprocessing as mp
 import numdifftools as nd
 from scipy.optimize import minimize
-from analysis.rnn_dynamical_systems.fixedpointfinder.build_utils import RnnDsBuilder, GruDsBuilder, CircularGruBuilder, \
+from fixedpointfinder.build_utils import RnnDsBuilder, GruDsBuilder, CircularGruBuilder, \
     LstmDsBuilder, HopfDsBuilder
-from analysis.rnn_dynamical_systems.fixedpointfinder.minimization import Minimizer, RecordableMinimizer, \
+from fixedpointfinder.minimization import Minimizer, RecordableMinimizer, \
     CircularMinimizer
 from utilities.util import flatten
 from utilities.model_utils import build_sub_model_to
