@@ -1,7 +1,7 @@
 # coupled Hopf model
 import numpy as np
 import matplotlib.pyplot as plt
-from analysis.rnn_dynamical_systems.fixedpointfinder.FixedPointFinder import Adamfixedpointfinder
+from fixedpointfinder.FixedPointFinder import Adamfixedpointfinder
 
 # parameters
 f = .05 # intrinsic frequency

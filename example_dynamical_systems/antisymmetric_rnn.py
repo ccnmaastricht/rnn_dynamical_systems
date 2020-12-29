@@ -3,8 +3,8 @@ import tensorflow as tf
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras import backend as K
 
-from rnn_dynamical_systems.fixedpointfinder.three_bit_flip_flop import Flipflopper
-from rnn_dynamical_systems.fixedpointfinder.plot_utils import visualize_flipflop
+from fixedpointfinder.three_bit_flip_flop import Flipflopper
+from fixedpointfinder.plot_utils import visualize_flipflop
 
 
 class AntisymmetricRNNCell(SimpleRNNCell):

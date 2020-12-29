@@ -10,8 +10,6 @@ df1dy = lambda x: -2*x
 df2dx = -1
 df2dy = lambda x,y: 1-x-y
 
-
-
 x = np.linspace(-10, 10, 400)
 y = np.linspace(-10, 10, 400)
 
