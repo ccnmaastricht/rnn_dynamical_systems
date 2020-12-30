@@ -1,183 +1,126 @@
 import jax.numpy as np
-from jax import grad, jit, random, vmap
-from jax.experimental import optimizers
+from jax import value_and_grad, jit, random, vmap
+from jax.experimental import stax, optimizers
+from jax.experimental.stax import Dense
+from fixedpointfinder import rnn
+from fixedpointfinder.plot_utils import visualize_flipflop
+
+import time
+import numpy as onp
+import numpy.random as npr
 
 
-class Flipflopper(object):
-    ''' Class for training an RNN to implement a 3-Bit Flip-Flop task as
-    described in Sussillo, D., & Barak, O. (2012). Opening the Black Box:
-    Low-Dimensional Dynamics in High-Dimensional Recurrent Neural Networks.
-    Neural Computation, 25(3), 626–649. https://doi.org/10.1162/NECO_a_00409
+def generate_flipflop_trials():
+    '''Generates synthetic data (i.e., ground truth trials) for the
+    FlipFlop task. See comments following FlipFlop class definition for a
+    description of the input-output relationship in the task.
 
-    Task:
-        A set of three inputs submit transient pulses of either -1 or +1. The
-        task of the model is to return said inputs until one of them flips.
-        If the input pulse has the same value as the previous input in a given
-        channel, the output must not change. Thus, the RNN has to memorize
-        previous input pulses. The number of input channels is not limited
-        in theory.
+    Args:
+        None.
+    Returns:
+        dict containing 'inputs' and 'outputs'.
+            'inputs': [n_batch x n_time x n_bits] numpy array containing
+            input pulses.
+            'outputs': [n_batch x n_time x n_bits] numpy array specifying
+            the correct behavior of the FlipFlop memory device.'''
+    data_hps = {'n_batch': 128,
+                 'n_time': 256,
+                 'n_bits': 3,
+                 'p_flip': 0.6}
+    n_batch = data_hps['n_batch']
+    n_time = data_hps['n_time']
+    n_bits = data_hps['n_bits']
+    p_flip = data_hps['p_flip']
 
-    Usage:
-        The class Flipflopper can be used to build and train a model of type
-        RNN on the 3-Bit Flip-Flop task. Furthermore, the class can make use
-        of the class FixedPointFinder to analyze the trained model.
+    # Randomly generate unsigned input pulses
+    unsigned_inputs = npr.binomial(
+        1, p_flip, [n_batch, n_time, n_bits])
 
-    Hyperparameters:
-        rnn_type: Specifies architecture of type RNN. Must be one of
-        ['vanilla','gru', 'lstm']. Will raise ValueError if
-        specified otherwise. Default is 'vanilla'.
+    # Ensure every trial is initialized with a pulse at time 0
+    unsigned_inputs[:, 0, :] = 1
 
-        n_hidden: Specifies the number of hidden units in RNN. Default
-        is: 24.
+    # Generate random signs {-1, +1}
+    random_signs = 2 * npr.binomial(
+        1, 0.5, [n_batch, n_time, n_bits]) - 1
 
-    '''
+    # Apply random signs to input pulses
+    inputs = onp.multiply(unsigned_inputs, random_signs)
 
-    def __init__(self, rnn_type: str = 'vanilla', n_hidden: int = 24):
+    # Allocate output
+    output = onp.zeros([n_batch, n_time, n_bits])
 
-        self.hps = {'rnn_type': rnn_type,
-                    'n_hidden': n_hidden,
-                    'model_name': 'flipflopmodel',
-                    'verbose': False}
+    # Update inputs (zero-out random start holds) & compute output
+    for trial_idx in range(n_batch):
+        for bit_idx in range(n_bits):
+            input_ = onp.squeeze(inputs[trial_idx, :, bit_idx])
+            t_flip = onp.where(input_ != 0)
+            for flip_idx in range(onp.size(t_flip)):
+                # Get the time of the next flip
+                t_flip_i = t_flip[0][flip_idx]
 
-        self.data_hps = {'n_batch': 128,
-                         'n_time': 256,
-                         'n_bits': 3,
-                         'p_flip': 0.6}
-        self.verbose = self.hps['verbose']
+                '''Set the output to the sign of the flip for the
+                remainder of the trial. Future flips will overwrite future
+                output'''
+                output[trial_idx, t_flip_i:, bit_idx] = \
+                    inputs[trial_idx, t_flip_i, bit_idx]
 
-        key = random.PRNGKey(1)
-        self.params, self.network = self._build_model(key, 3, n_hidden, 3)
-        self.batch_network = vmap(self.network, in_axes=(None, 0, 0))
+    return {'inputs': inputs, 'output': output}
 
-        self.opt_init, self.opt_update, self.get_params = optimizers.adam(1e-3)
 
-        self.update_jit = jit(self.update)
+def mse_loss(params, inputs, targets):
+    """ Calculate the Mean Squared Error Prediction Loss. """
+    preds = gru_rnn(params, inputs)
+    return np.mean((preds - targets)**2)
 
-    @staticmethod
-    def _vanilla_params(key, n_input, n_hidden, n_output, scale=1e-3):
 
-        keys = random.split(key, 5)
+@jit
+def update(params, x, y, opt_state):
+    """ Perform a forward pass, calculate the MSE & perform a SGD step. """
+    loss, grads = value_and_grad(mse_loss)(params, x, y)
+    opt_state = opt_update(0, grads, opt_state)
+    return get_params(opt_state), opt_state, loss
 
-        UR = random.normal(next(keys), (n_hidden, n_input)) * scale
-        WR = random.normal(next(keys), (n_hidden, n_hidden)) * scale
-        bR = random.normal(next(keys), (n_hidden, )) * scale
+num_batches = 128
+batch_size = 128
 
-        WO = random.normal(next(keys), (n_output, n_hidden)) * scale
-        bO = random.normal(next(keys), (n_output, )) * scale
 
-        return {'UR': UR,
-                'WR': WR,
-                'bR': bR,
-                'WO': WO,
-                'bO': bO}
+def batch_indices(iter):
+    idx = iter % num_batches
+    return slice(idx * batch_size, (idx + 1) * batch_size)
 
-    @staticmethod
-    def vanilla_rnn(params, h, x):
 
-        u = np.dot(params['UR'], x)
-        r = np.dot(params['WR'], h) + params['bR']
-        return np.tanh(r + u)
+key = random.PRNGKey(24)
 
-    @staticmethod
-    def output_layer(params, h):
+n_hidden = 24
 
-        return np.tanh(np.dot(params['WO'], h) + params['bO'])
 
-    def _build_model(self, key, n_input, n_hidden, n_output):
-        '''Builds model that can be used to train the 3-Bit Flip-Flop task.
+init_params = rnn.vanilla_params(key, 3, n_hidden, 3)
 
-        Args:
-            None.
+step_size = 1e-3
+opt_init, opt_update, get_params = optimizers.adam(step_size)
+opt_state = opt_init(init_params)
 
-        Returns:
-            None.'''
-        params = self._vanilla_params(key, n_input, n_hidden, n_output)
+training_data = generate_flipflop_trials()
 
-        def network(params, x):
 
-            hn = self.vanilla_rnn(params, self.h, x)
-            self.h = hn
-            return self.output_layer(params, hn), hn
+train_loss_log = []
+start_time = time.time()
+for epoch in range(100):
+    for batch_idx in range(num_batches):
 
-        return params, network
+        # ids = batch_indices(batch_idx)
+        x = np.expand_dims(training_data['inputs'][batch_idx, :, :], 0)
+        y = np.expand_dims(training_data['output'][batch_idx, :, :], 0)
 
-    def loss(self, params, x, targets):
+        opt_state = rnn.update_w_jit(batch_idx*epoch, opt_state, opt_update, get_params, x, y)
+    batch_time = time.time() - start_time
 
-        outputs = self.batch_network(params, x)
+    start_time = time.time()
+    loss = rnn.loss_jit(get_params(opt_state), x, y)
+    print("Epoch {} | T: {:0.2f} | MSE: {:0.10f} |".format(epoch, batch_time, loss))
 
-        loss = np.mean((outputs - targets)**2)
-        return loss
+x = np.expand_dims(training_data['inputs'][0, :, :], 0)
+h_t, prediction = rnn.batch_rnn_run(get_params(opt_state), x)
+prediction = onp.asarray(prediction)
 
-    def update(self, id, params, x, targets, opt_state):
-        grads = grad(self.loss)(params, h, x, targets)
-        opt_state = self.opt_update(id, grads, opt_state)
-        return self.get_params(opt_state), opt_state
-
-    def generate_flipflop_trials(self):
-        '''Generates synthetic data (i.e., ground truth trials) for the
-        FlipFlop task. See comments following FlipFlop class definition for a
-        description of the input-output relationship in the task.
-
-        Args:
-            None.
-        Returns:
-            dict containing 'inputs' and 'outputs'.
-                'inputs': [n_batch x n_time x n_bits] numpy array containing
-                input pulses.
-                'outputs': [n_batch x n_time x n_bits] numpy array specifying
-                the correct behavior of the FlipFlop memory device.'''
-        data_hps = self.data_hps
-        n_batch = data_hps['n_batch']
-        n_time = data_hps['n_time']
-        n_bits = data_hps['n_bits']
-        p_flip = data_hps['p_flip']
-
-        # Randomly generate unsigned input pulses
-        unsigned_inputs = self.rng.binomial(
-            1, p_flip, [n_batch, n_time, n_bits])
-
-        # Ensure every trial is initialized with a pulse at time 0
-        unsigned_inputs[:, 0, :] = 1
-
-        # Generate random signs {-1, +1}
-        random_signs = 2 * self.rng.binomial(
-            1, 0.5, [n_batch, n_time, n_bits]) - 1
-
-        # Apply random signs to input pulses
-        inputs = np.multiply(unsigned_inputs, random_signs)
-
-        # Allocate output
-        output = np.zeros([n_batch, n_time, n_bits])
-
-        # Update inputs (zero-out random start holds) & compute output
-        for trial_idx in range(n_batch):
-            for bit_idx in range(n_bits):
-                input_ = np.squeeze(inputs[trial_idx, :, bit_idx])
-                t_flip = np.where(input_ != 0)
-                for flip_idx in range(np.size(t_flip)):
-                    # Get the time of the next flip
-                    t_flip_i = t_flip[0][flip_idx]
-
-                    '''Set the output to the sign of the flip for the
-                    remainder of the trial. Future flips will overwrite future
-                    output'''
-                    output[trial_idx, t_flip_i:, bit_idx] = \
-                        inputs[trial_idx, t_flip_i, bit_idx]
-
-        return {'inputs': inputs, 'output': output}
-
-    def train(self, stim, epochs, save_model: bool = True):
-        '''Function to train an RNN model This function will save the trained model afterwards.
-
-        Args:
-            stim: dict containing 'inputs' and 'output' as input and target data for training the model.
-
-                'inputs': [n_batch x n_time x n_bits] numpy array containing
-                input pulses.
-                'outputs': [n_batch x n_time x n_bits] numpy array specifying
-                the correct behavior of the FlipFlop memory device.
-
-        Returns:
-            None.'''
-
-        return history
+visualize_flipflop(prediction, training_data)
